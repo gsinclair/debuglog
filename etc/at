@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+attest=../attest
+col=../col
+exec ruby -rubygems -Ilib -I${col}/lib -I${attest}/lib ${attest}/bin/attest $*
