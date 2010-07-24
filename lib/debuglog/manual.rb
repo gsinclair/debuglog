@@ -55,12 +55,24 @@ class DebugLog
 
   def trace(expr, _binding, *options)
     value = eval expr, _binding
-    value = value.inspect
+    formatter = :inspect
+    ##  if (m = options.find { |o| o.is_a? Symbol })
+    ##    case m
+    ##    when :p        then :inspect
+    ##    when :s, :to_s then :to_s
+    ##    when :pp       then (require 'pp'; :pretty_inspect)
+    ##    when :yaml     then (require 'yaml'; :to_yaml)
+    ##    when :ap       then (require 'ap'; :ap)
+    ##    else           then :inspect
+    ##    end
+    ##  else
+    ##    :inspect
+    ##  end
+    value = value.send(formatter)
     if (n = options.find { |o| o.is_a? Integer })
       value = value[0...n] + "..."
     end
     message = "#{expr} == #{value}"
-      # todo: consider :p, :pp, :yaml, etc.
     _write(message)
   end
 

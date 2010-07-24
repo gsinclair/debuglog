@@ -38,6 +38,9 @@ D "Debuglog auto configuration" do
       trace :str, binding, 30
       T :debuglog, /str == "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx\.\.\./, "debug.log"
     end
+    D "different formats" do
+      # not really interested in this feature at the moment
+    end
   end
   D "time" do
     time('sum to 10') { 1+2+3+4+5+6+7+8+9+10 }
