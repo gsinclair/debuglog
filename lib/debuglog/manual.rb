@@ -48,13 +48,18 @@ class DebugLog
     @fh.puts('-' * header.length)
   end
 
-  def debug(string)
-    _write(string.to_s)
+  def debug(*args)
+    string = args.map { |x| x.to_s }.join
+    _write(string)
   end
 
-  def trace(expr, _binding)
+  def trace(expr, _binding, *options)
     value = eval expr, _binding
-    message = "#{expr} == #{value.inspect}"
+    value = value.inspect
+    if (n = options.find { |o| o.is_a? Integer })
+      value = value[0...n] + "..."
+    end
+    message = "#{expr} == #{value}"
       # todo: consider :p, :pp, :yaml, etc.
     _write(message)
   end

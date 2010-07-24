@@ -8,7 +8,7 @@ trace "ENV['rvm_bin_path']", binding
 debug "Environment variables containing PATH"
 keys = ENV.keys.grep /PATH/
 keys.each do |key|
-  trace "  ENV[#{key.inspect}]", binding
+  trace "  ENV[#{key.inspect}]", binding, 40
 end
 
 debug "(end of list)"

@@ -18,6 +18,9 @@ D "Debuglog auto configuration" do
     T :debuglog, /abc123/, "debug.log"
     debug -189
     T :debuglog, /-189/, "debug.log"
+    x = 5
+    debug "The value of x is ", x, "!"
+    T :debuglog, /The value of x is 5!/, "debug.log"
   end
   D "trace" do
     D "array" do
@@ -29,6 +32,11 @@ D "Debuglog auto configuration" do
       str = "blah"
       trace :str, binding
       T :debuglog, /str == "blah"/, "debug.log"
+    end
+    D "truncate output" do
+      str = "x" * 100
+      trace :str, binding, 30
+      T :debuglog, /str == "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx\.\.\./, "debug.log"
     end
   end
   D "time" do
