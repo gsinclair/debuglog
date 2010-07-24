@@ -7,140 +7,128 @@
 
 class DebugLog
 
+  @@instance = nil
+
+  DEFAULT_CONFIGURATION = {
+    :debug => :debug,
+    :trace => :trace,
+    :time  => :time,
+    :file  => 'debug.log'
+  }
+
   class Error < StandardError; end
 
-  class << DebugLog
+  def DebugLog.err(string)
+    raise ::DebugLog::Error, "DebugLog error -- #{string}"
+  end
 
-    DEFAULT_CONFIGURATION = {
-      :debug => :debug,
-      :trace => :trace,
-      :time  => :time,
-      :file  => 'debug.log'
-    }
-
-    def configure(hash)
-      err "DebugLog.configure already called" unless @configuration.nil?
-      @configuration = hash.dup
-      self.debug_method = hash[:debug]
-      self.trace_method = hash[:trace]
-      self.time_method = hash[:time]
-      self.filename = hash[:filename] || 'debug.log'
-      @start_time = Time.now
+  def DebugLog.configure(hash)
+    if @@instance.nil?
+      @@instance = DebugLog.new(hash)
+    else
+      err("DebugLog already configured")  # todo: replace
     end
+  end
 
-    def autoconfigure
-      configure(DEFAULT_CONFIGURATION)
-    end
+  def DebugLog.autoconfigure
+    configure(DEFAULT_CONFIGURATION)
+  end
 
-    def debug_method=(m)
-      return if m.nil?
-      _check_error_clash(m)
-      Kernel.module_eval do
-        send(:define_method, m) { |*args| DebugLog.debug(*args) }
+  def initialize(config)
+    @kernel_methods_defined = []
+    _create_kernel_method(config[:debug], :debug)
+    _create_kernel_method(config[:trace], :trace)
+    _create_kernel_method(config[:time],  :time)
+    @filename = config[:filename] || 'debug.log'
+    @fh = File.open(@filename, 'w')
+    @fh.sync = true
+    @start_time = Time.now
+    header = "DebugLog -- #{@start_time}"
+    @fh.puts header
+    @fh.puts('-' * header.length)
+  end
+
+  def debug(string)
+    _write(string.to_s)
+  end
+
+  def trace(expr, _binding)
+    value = eval expr, _binding
+    message = "#{expr} == #{value}"
+      # todo: consider :p, :pp, :yaml, etc.
+    _write(message)
+  end
+
+  def time(task, &block)
+    message =
+      if block.nil?
+        "*** Debuglog.task: block required (#{caller[0]}) ***"
+      else
+        t = Time.now
+        block.call
+        t = sprintf "%.3f", (Time.now - t)
+        "#{task}: #{t} sec"
       end
-    end
+    _write(message)
+  end
 
-    def trace_method=(m)
-      return if m.nil?
-      _check_error_clash(m)
-      Kernel.module_eval do
-        send(:define_method, m) { |*args| DebugLog.trace(*args) }
-      end
+  def _write(message)
+    time = (Time.now - @start_time)
+    if time.to_i != @time.to_i
+      @fh.puts "-------"
     end
+    @time = time
+    time = sprintf "%04.1f", time.to_f
+    text = "[#{time}] #{message}"
+    @fh.puts(text)
+  end
 
-    def time_method=(m)
-      return if m.nil?
-      _check_error_clash(m)
-      Kernel.module_eval do
-        send(:define_method, m) { |*args, &block| DebugLog.time(*args, &block) }
-      end
-    end
-
-    def filename=(f)
-      @filename = f
-    end
-
-    def err(string)
-      raise ::DebugLog::Error, "DebugLog error -- #{string}"
-    end
-
-    def debug(string)
-      write(string)
-    end
-
-    def trace(expr, _binding)
-      value = eval expr, _binding
-      message = "#{expr} == #{value}"
-        # todo: consider :p, :pp, :yaml, etc.
-      write(message)
-    end
-
-    def time(task)
-      message =
-        if block_given?
-          t = Time.now
-          yield
-          t = sprintf "%.3f", (Time.now - t)
-          "#{task}: #{t} sec"
-        else
-          "*** Debuglog.task: block required ***"
+  def _create_kernel_method(name, target)
+    if name.nil?
+      return 
+    elsif Kernel.respond_to? name
+      DebugLog.err "DebugLog: Method clash in Kernel: #{name.inspect}"
+    else
+      Kernel.module_eval %{
+        def #{name}(*args, &block)
+          DebugLog.call_method(:#{target}, *args, &block)
         end
-      write(message)
-    end
-
-    def write(message)
-      time = (Time.now - @start_time)
-      if time.to_i != @time.to_i
-        _logfile.puts "-------"
-      end
-      @time = time
-      time = sprintf "%04.1f", time.to_f
-      text = "[#{time}] #{message}"
-      _logfile.puts(text)
-      _logfile.flush
-    end
-
-    def _create_debug_method(method_name)
-      Kernel.send(:define_method, method_name) { |message|
-        DebugLog.write(message)
       }
+      @kernel_methods_defined << name
     end
+  end
 
-    def _logfile
-      @fh ||= File.new(@filename, "w")
-    end
-
-    def _check_error_clash(_method)
-      if Kernel.respond_to? _method
-        err "Method clash: #{_method.inspect}"
+  DEBUG_METHODS = [:debug, :trace, :time]
+  def DebugLog.call_method(name, *args, &block)
+    if DEBUG_METHODS.include? name
+      if @@instance
+        @@instance.send(name, *args, &block)
+      else
+        err %{
+          ~ DebugLog is not configured.  You can:
+          ~   * require 'debuglog/auto' or call DebugLog.autoconfigure; or
+          ~   * call DebugLog.configure(...) to configure it manually
+        }.strip.gsub(/^\s+~ /, '')
       end
+    else
+      err "illegitimate method called: #{name}"
     end
+  end
 
-    def wipe_slate_clean_for_testing
-      STDERR.tap do |s|
-        s.puts "wipe_slate_clean_for_testing"
-        s.puts "  @configuration == #{@configuration.pretty_inspect}"
-        s.puts "  Kernel methods: #{Kernel.methods.grep /^(debug|trace|time)$/}"
-      end
-      # This method has nothing to do if configuration hasn't happened.
-      return unless @configuration
-
-      # Remove methods from Kernel that were set up before.
-      @configuration.values_at(:debug, :trace, :time).compact.each do |method|
-        if Kernel.respond_to? method
-          Kernel.send(:remove_method, method)
-        end
-      end
-
-      # Close log file.
-      @fh.close if @fh
-      @fh = nil
-
-      # Reset 'configuration' object so configuration can happen again.
-      @configuration = nil
+  def terminate   # For testing
+    @fh.close unless @fh.closed?
+    @kernel_methods_defined.each do |m|
+      Kernel.send(:remove_method, m)
     end
+  end
+  private :terminate
 
-  end  # class << DebugLog
+  def DebugLog.wipe_slate_clean_for_testing
+    if @@instance
+      @@instance.send(:terminate)
+      @@instance = nil
+    end
+  end
 
 end  # class DebugLog
 
