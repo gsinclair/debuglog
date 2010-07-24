@@ -20,12 +20,23 @@ D "Debuglog auto configuration" do
     T :debuglog, /-189/, "debug.log"
   end
   D "trace" do
-    foo = [1,2,3]
-    trace :foo, binding
-    T :debuglog, /foo == \[1, 2, 3\]/, "debug.log"
+    D "array" do
+      foo = [1,2,3]
+      trace :foo, binding
+      T :debuglog, /foo == \[1, 2, 3\]/, "debug.log"
+    end
+    D "string" do
+      str = "blah"
+      trace :str, binding
+      T :debuglog, /str == "blah"/, "debug.log"
+    end
   end
   D "time" do
     time('sum to 10') { 1+2+3+4+5+6+7+8+9+10 }
     T :debuglog, /sum to 10: .* sec/, "debug.log"
+    D "return value of block is accessible" do
+      sum = time('sum') { 1 + 1 }
+      Eq sum, 2
+    end
   end
 end

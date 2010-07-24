@@ -14,4 +14,10 @@ D "DebugLog manual configuration (unsuccessful)" do
     E(DebugLog::Error) { DebugLog.configure(:trace => :my_trace) }
     E(DebugLog::Error) { DebugLog.configure(:time  => :my_time)  }
   end
+
+  D "calling methods without having configured -> error" do
+    # At this point DebugLog is not configured.
+    E(NameError) { debug }
+    E(DebugLog::Error) { DebugLog.call_method(:debug, "...") }
+  end
 end

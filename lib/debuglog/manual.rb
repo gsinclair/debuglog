@@ -54,22 +54,24 @@ class DebugLog
 
   def trace(expr, _binding)
     value = eval expr, _binding
-    message = "#{expr} == #{value}"
+    message = "#{expr} == #{value.inspect}"
       # todo: consider :p, :pp, :yaml, etc.
     _write(message)
   end
 
   def time(task, &block)
+    result = nil
     message =
       if block.nil?
         "*** Debuglog.task: block required (#{caller[0]}) ***"
       else
         t = Time.now
-        block.call
+        result = block.call
         t = sprintf "%.3f", (Time.now - t)
         "#{task}: #{t} sec"
       end
     _write(message)
+    result
   end
 
   def _write(message)
@@ -93,7 +95,7 @@ class DebugLog
         def #{name}(*args, &block)
           DebugLog.call_method(:#{target}, *args, &block)
         end
-      }
+      }, __FILE__, __LINE__ - 4
       @kernel_methods_defined << name
     end
   end
