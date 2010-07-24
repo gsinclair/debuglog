@@ -122,7 +122,7 @@ given and records it in the log file.
 
 {% endhighlight %}
 
-It requires a single string (`#to_str`) argument and a block.
+It requires a single string (`#to_s`) argument and a block.
 
 
 ## Configuration

@@ -1,18 +1,9 @@
-require 'debuglog'
-require 'ruby-debug'
-
-Attest.custom :debuglog, {
-  :description => "Last line of log file",
-  :parameters  => [ [:regex, Regexp], [:filename, String] ],
-  :run => proc {
-    file_data = File.read(filename)
-    test('file exists') { N! file_data }
-    last_line = file_data.split("\n").last
-    test('match') { Mt last_line, regex }
+D "Debuglog auto configuration" do
+  D.<< {
+    DebugLog.send :wipe_slate_clean_for_testing
+    DebugLog.autoconfigure
   }
-}
 
-D "Debuglog" do
   D "Debuglog and DebugLog are the same thing" do
     Id Debuglog, DebugLog
   end
@@ -25,6 +16,8 @@ D "Debuglog" do
   D "debug" do
     debug "abc123"
     T :debuglog, /abc123/, "debug.log"
+    debug -189
+    T :debuglog, /-189/, "debug.log"
   end
   D "trace" do
     foo = [1,2,3]

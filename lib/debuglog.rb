@@ -14,11 +14,4 @@
 # If +debug+ (or the name you choose manually) is the name of an existing
 # method, it will _not_ be overwritten.
 
-require 'debuglog/manual'
-
-DebugLog.configure(
-  :debug => :debug,
-  :trace => :trace,
-  :time  => :time,
-  :file  => 'debug.log'
-)
+require 'debuglog/auto'
