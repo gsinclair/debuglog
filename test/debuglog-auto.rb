@@ -18,9 +18,22 @@ D "Debuglog auto configuration" do
     T :debuglog, /abc123/, "debug.log"
     debug -189
     T :debuglog, /-189/, "debug.log"
-    x = 5
-    debug "The value of x is ", x, "!"
-    T :debuglog, /The value of x is 5!/, "debug.log"
+    D "multiple arguments" do
+      x = 5
+      debug "The value of x is ", x, "!"
+      T :debuglog, /The value of x is 5!/, "debug.log"
+    end
+    D "multi-line text" do
+      text = "I must go down to the seas again\nTo the lonely sea and the sky\nAnd all I want is a tall ship\nAnd a star to steer her by\n     -- John Masefield"
+      debug text
+      log_text_lines = File.read("debug.log").split("\n").last(5)
+      # The text in the log file should be indented to look good.
+      Mt log_text_lines.shift, /\[\d\d\.\d\] I must go down to the seas again$/
+      Eq log_text_lines.shift, "       To the lonely sea and the sky"
+      Eq log_text_lines.shift, "       And all I want is a tall ship"
+      Eq log_text_lines.shift, "       And a star to steer her by"
+      Eq log_text_lines.shift, "            -- John Masefield"
+    end
   end
   D "trace" do
     D "array" do

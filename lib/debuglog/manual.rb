@@ -40,7 +40,11 @@ class DebugLog
     _create_kernel_method(config[:trace], :trace)
     _create_kernel_method(config[:time],  :time)
     @filename = config[:filename] || 'debug.log'
-    @fh = File.open(@filename, 'w')
+    begin
+      @fh = File.open(@filename, 'w')
+    rescue => e
+      raise DebugLog::Error, "#{e.class} (#{e.message})"
+    end
     @fh.sync = true
     @start_time = Time.now
     header = "DebugLog -- #{@start_time}"
@@ -55,7 +59,8 @@ class DebugLog
 
   def trace(expr, _binding, *options)
     value = eval expr, _binding
-    formatter = :inspect
+    require 'pp'
+    formatter = :pretty_inspect
     ##  if (m = options.find { |o| o.is_a? Symbol })
     ##    case m
     ##    when :p        then :inspect
@@ -72,7 +77,13 @@ class DebugLog
     if (n = options.find { |o| o.is_a? Integer })
       value = value[0...n] + "..."
     end
-    message = "#{expr} == #{value}"
+    message =
+      if value.index("\n")
+        value = value.gsub(/^/, '  ')
+        "#{expr} ==\n#{value}"
+      else
+        "#{expr} == #{value}"
+      end
     _write(message)
   end
 
@@ -94,12 +105,24 @@ class DebugLog
   def _write(message)
     time = (Time.now - @start_time)
     if time.to_i != @time.to_i
-      @fh.puts "-------"
+      elapsed = time.to_i - @time.to_i
+      if elapsed > 1
+        @fh.puts "------- (#{elapsed} sec)"
+      else
+        @fh.puts "-------"
+      end
     end
     @time = time
     time = sprintf "%04.1f", time.to_f
-    text = "[#{time}] #{message}"
-    @fh.puts(text)
+    if message.index("\n")
+      lines = message.split("\n")
+      @fh.puts "[#{time}] #{lines.shift}"
+      indent = " " * (time.size+3)
+      lines.each do |line| @fh.puts "#{indent}#{line}" end
+    else
+      text = "[#{time}] #{message}"
+      @fh.puts(text)
+    end
   end
 
   def _create_kernel_method(name, target)

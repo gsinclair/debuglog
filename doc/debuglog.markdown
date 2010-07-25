@@ -13,28 +13,32 @@ title: Debuglog
 
 ## Synopsis
 
-Zero-conf: accepting the default method and file names:
+Debuglog gives you `debug`, `trace` and `time` methods that write their output
+to the file `./debug.log`.
 
 {% highlight ruby %}
 
-    require 'debuglog'
+    require 'debuglog'     # or require 'debuglog/auto'
+
     debug "Message..."
     trace :x, binding
     time('Task') { action }
 
 {% endhighlight %}
 
-Configuring each item:
+You can change the names of the methods and the filename.
 
 {% highlight ruby %}
 
     require 'debuglog/manual'
+
     DebugLog.configure(
       :debug => :my_debug,
       :trace => :my_trace,
       :time  => :my_time,
       :filename => 'log/xyz.log'
     )
+
     my_debug "Message..."
     my_trace :x, binding
     my_time('Task') { action }
@@ -43,12 +47,13 @@ Configuring each item:
 
 In either case, the log file will look something like this:
 
-    [00.0] Program started
-    [01.3] Message...
-    [01.5] x == 5
-    [02.6] Task: 1.0831 sec
+    DebugLog -- 2010-07-25 18:58:22 +1000
+    -------------------------------------
+    [00.3] Message...
+    [00.5] x == 5
+    [00.6] Task: 1.0831 sec
 
-The `[01.3]` etc. is the number of seconds (rounded) since the program started
+The `[00.3]` etc. is the number of seconds (rounded) since the program started
 (well, since `require 'debuglog'`, anyway).
 
 More nuanced configuration is possible; see [Configuration](#Configuration).
@@ -70,17 +75,13 @@ directory.  In that file, you can record:
 
 Of course, any or all of those methods names might be used by another library or
 by your own code. You can choose different method names and a different
-filename; see [Configuration](#Configuration).  Debuglog will exit with a
-message on STDERR if it detects a method clash.
+filename; see [Configuration](#Configuration).  Debuglog will raise an
+exception (`DebugLog::Error`) if it detects a method clash.
 
 ### `debug`
 
 The `debug` method is straightforward.  It calls `to_s` on its argument(s) and
 writes them to the log file.
-
-If a symbol argument is encountered, it's interpreted as color information.
-E.g. `yb` for yellow bold.  See [Col][col] for details.  If you don't have the
-Col library installed, color specifiers are silently ignored.
 
 [col]: http://gsinclair.github.com/col.html
 
@@ -92,22 +93,18 @@ following lines are equivalent:
 {% highlight ruby %}
 
     trace :radius, binding
-    debug "radius == #{radius}"
+    debug "radius == #{radius.pretty_inspect}"
 
 {% endhighlight %}
 
-You may choose to `alias _b binding` for convenience; DebugLog doesn't do that
-for you.
+> Tip: You may choose to `alias _b binding` for convenience; DebugLog doesn't do that
+> for you.
 
-`trace` gives you options on how the variable should be rendered:
+If you want the output truncated, pass an integer argument:
 
 {% highlight ruby %}
 
-    trace :radius, binding, :p          # default
-    trace :radius, binding, :s          # to_s
-    trace :radius, binding, :pp
-    trace :radius, binding, :ap         # awesome_print
-    trace :radius, binding, :yaml
+    trace :text, binding, 30
 
 {% endhighlight %}
 
@@ -124,6 +121,18 @@ given and records it in the log file.
 
 It requires a single string (`#to_s`) argument and a block.
 
+### Notes
+
+`Debuglog` is a synonym for `DebugLog`, so you don't have to trouble yourself to
+remember the capitalisation.
+
+The text written to the log file has some nice touches:
+* Multi-line output is indented correctly.
+* `-------` is inserted each time an extra second of running time has elapsed.
+  This gives you a quick visual indication of how much logfile activity is
+  taking place.  If more than one second has elapsed since the last log item,
+  something like `------- (3 sec)` is emitted.
+
 
 ## Configuration
 
@@ -132,6 +141,7 @@ The [Synopsis](#synopsis) gave a good example of configuration:
 {% highlight ruby %}
 
     require 'debuglog/manual'
+
     DebugLog.configure(
       :debug => :my_debug,
       :trace => :my_trace,
@@ -143,11 +153,11 @@ The [Synopsis](#synopsis) gave a good example of configuration:
 
 This changes the names of the methods that Debuglog defines.  The motivation for
 that, of course, is another library or your own code defining methods of those
-names.  Debuglog will exit with a message on STDERR if it detects a method name
-clash.  (Of course, you might load the other library _after_ Debuglog, in which
-case it won't detect the clash.)  This precaution is taken because they are
-common method names at the top-level, and it's just not right for a debugging
-library to _cause_ bugs.
+names.  Debuglog will raise an exception (`DebugLog::Error`) if it detects a
+method name clash.  (Of course, you might load the other library _after_
+Debuglog, in which case it won't detect the clash.)  This precaution is taken
+because they are common method names at the top-level, and it's just not right
+for a debugging library to _cause_ bugs.
 
 If you omit a method name from the configuration, that method will not be
 defined.  The following code defines the method `d` instead of `debug`, but does
@@ -180,16 +190,18 @@ ignored with a message on STDERR.  That includes this case:
 {% highlight ruby %}
 
     require 'debuglog'           # should be 'debuglog/manual'
+
     DebugLog.configure(...)
 
 {% endhighlight %}
 
-The code `require 'debuglog` is precisely equal to the following code, meaning
+The code `require 'debuglog` is equivalent to the following code, meaning
 your one shot at calling `configure` has been taken.
 
 {% highlight ruby %}
 
     require 'debuglog/manual'
+
     DebugLog.configure(
       :debug => :debug,
       :trace => :trace,
@@ -199,13 +211,8 @@ your one shot at calling `configure` has been taken.
 
 {% endhighlight %}
 
-Final note: if you specify a file that is not writable, you will be notified on
-STDERR and the program will exit.
-
-### DebugLog and Debuglog
-
-`Debuglog` is a synonym for `DebugLog`, so you don't have to trouble yourself to
-remember the capitalisation.
+Final note: if you specify a file that is not writable, an error
+(`DebugLog::Error`) will be raised.
 
 
 ## Endnotes
@@ -222,6 +229,8 @@ else, they're welcome to it.)
 
 Debuglog does not depend on any other libraries and works in Ruby 1.8 and Ruby
 1.9.
+
+Unit tests are implemented in [Attest](http://gsinclair.github.com/attest.html).
 
 ### Project details
 
@@ -241,9 +250,13 @@ Color.  For instance, `debug "!! Object pool overloaded"` could print the
 message (minus the exclamation marks) in red.  Traces could be in yellow.  Times
 could be in dark cyan, etc.
 
-Method to turn it off and on: `DebugLog.off` and `.on` or something.
+Further to the above: symbol arguments to `debug` could provide some color
+using the `Col` library.  E.g. `debug "blah...", :yb` for yellow bold.
 
-Insert a `---` line in the log file if a second boundary has passed, so you can
-get a quick visual on how fast things are happening and it breaks up the display
-a bit.  If more than one second has passed, maybe two `---` lines or `--- ...`
-or something.
+Method to turn it off and on: `DebugLog.off` and `DebugLog.on` or something.
+
+Indenting via `DebugLog.indent` and `DebugLog.outdent`.
+
+Options for `trace` output: `p` for `:inspect`; `y` for `:to_yaml` etc.  I
+don't see why the current `:pretty_inspect` would ever be insufficient, but of
+course there may be cases.

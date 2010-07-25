@@ -20,4 +20,8 @@ D "DebugLog manual configuration (unsuccessful)" do
     E(NameError) { debug }
     E(DebugLog::Error) { DebugLog.call_method(:debug, "...") }
   end
+
+  D "specifying unwritable log file -> error" do
+    E(DebugLog::Error) { DebugLog.configure(:filename => '/fodsfw/fgsg/e/debug.log') }
+  end
 end
