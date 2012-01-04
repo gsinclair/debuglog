@@ -58,7 +58,7 @@ class DebugLog
   end
 
   def trace(expr, _binding, *options)
-    value = eval expr, _binding
+    value = eval expr.to_s, _binding
     require 'pp'
     formatter = :pretty_inspect
     ##  if (m = options.find { |o| o.is_a? Symbol })
@@ -73,9 +73,9 @@ class DebugLog
     ##  else
     ##    :inspect
     ##  end
-    value = value.send(formatter)
+    value = value.send(formatter).strip
     if (n = options.find { |o| o.is_a? Integer })
-      value = value[0...n] + "..."
+      value = value[0...n] + "..." if value.length > n
     end
     message =
       if value.index("\n")

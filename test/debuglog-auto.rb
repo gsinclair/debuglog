@@ -51,9 +51,16 @@ D "Debuglog auto configuration" do
       T :debuglog, /str == "blah"/, "debug.log"
     end
     D "truncate output" do
-      str = "x" * 100
-      trace :str, binding, 30
-      T :debuglog, /str == "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx\.\.\./, "debug.log"
+      D "output that is too long" do
+        str = "x" * 100
+        trace :str, binding, 30
+        T :debuglog, /str == "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx\.\.\./, "debug.log"
+      end
+      D "output that is not too long" do
+        str = "x" * 10
+        trace :str, binding, 30
+        T :debuglog, /str == "xxxxxxxxxx"$/, "debug.log"
+      end
     end
     D "different formats" do
       # not really interested in this feature at the moment
