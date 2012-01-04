@@ -1,4 +1,5 @@
 D "DebugLog manual configuration (unsuccessful)" do
+
   D.< { DebugLog.send :wipe_slate_clean_for_testing }
 
   D "clash with existing :debug method" do
@@ -24,4 +25,5 @@ D "DebugLog manual configuration (unsuccessful)" do
   D "specifying unwritable log file -> error" do
     E(DebugLog::Error) { DebugLog.configure(:filename => '/fodsfw/fgsg/e/debug.log') }
   end
+
 end

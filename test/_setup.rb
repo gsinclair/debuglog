@@ -1,7 +1,6 @@
 require 'debuglog'
-require 'ruby-debug'
 
-Attest.custom :debuglog, {
+Whitestone.custom :debuglog, {
   :description => "Last line of log file",
   :parameters  => [ [:regex, Regexp], [:filename, String] ],
   :run => proc {

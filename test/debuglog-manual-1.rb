@@ -1,4 +1,5 @@
 D "DebugLog manual configuration (successful)" do
+
   D.< { DebugLog.send :wipe_slate_clean_for_testing }
 
   D ":debug => :my_debug, :filename => 'xyz.txt'" do
@@ -36,4 +37,5 @@ D "DebugLog manual configuration (successful)" do
       E(NoMethodError) { time('task') { :foo } }
     end
   end
+
 end
