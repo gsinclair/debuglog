@@ -1,3 +1,8 @@
+=== 1.0.1 / 2023-01-06
+
+* Fixed bugs in `trace`
+* Improved documentation and project management (Bundler)
+
 === 1.0.0 / 2012-01-03
 
 * First release (not yet announced)
