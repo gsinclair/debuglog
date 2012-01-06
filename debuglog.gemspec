@@ -25,5 +25,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "bundler"
   s.add_development_dependency "whitestone"
 
-  s.required_ruby_version = '>= 1.8.6'    # Not yet tested.
+  s.required_ruby_version = '>= 1.8.6'    # Tested.
 end

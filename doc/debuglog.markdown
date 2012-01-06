@@ -5,8 +5,6 @@ title: Debuglog
 
 # Debuglog -- a zero-conf debug.log file
 
-**Status: awaiting release (July 2010)**
-
 * This will be replaced by a table of contents
 {:toc}
 
@@ -20,13 +18,25 @@ to the file `./debug.log`.
 
     require 'debuglog'     # or require 'debuglog/auto'
 
-    debug "Message..."
-    trace :x, binding
-    time('Task') { action }
+    debug "Creating #{n} connections"
+    trace "names.first", binding
+    time('Process config file') { Subsystem.configure(ARGV.shift) }
 
 {% endhighlight %}
 
-You can change the names of the methods and the filename.
+The log file (default `./debug.log`) will look something like this:
+
+    DebugLog -- 2011-12-28 18:58:22 +1000
+    -------------------------------------
+    [00.3] Creating 14 connections
+    [00.8] names.first == "Sandy White"
+    [01.9] Process config file: 1.0831 sec
+
+The `[00.3]` etc. is the number of seconds (rounded) since the program started
+(well, since `require 'debuglog'`, anyway).
+
+You can use different method names (to avoid a clash) and a different filename
+with some initial configuration.
 
 {% highlight ruby %}
 
@@ -39,22 +49,11 @@ You can change the names of the methods and the filename.
       :filename => 'log/xyz.log'
     )
 
-    my_debug "Message..."
-    my_trace :x, binding
-    my_time('Task') { action }
+    my_debug "Creating #{n} connections"
+    my_trace "names.first", binding
+    my_time('Process config file') { Subsystem.configure(ARGV.shift) }
 
 {% endhighlight %}
-
-In either case, the log file will look something like this:
-
-    DebugLog -- 2010-07-25 18:58:22 +1000
-    -------------------------------------
-    [00.3] Message...
-    [00.5] x == 5
-    [00.6] Task: 1.0831 sec
-
-The `[00.3]` etc. is the number of seconds (rounded) since the program started
-(well, since `require 'debuglog'`, anyway).
 
 More nuanced configuration is possible; see [Configuration](#Configuration).
 
@@ -87,8 +86,9 @@ writes them to the log file.
 
 ### `trace`
 
-`trace` requires you to pass the binding with the `binding` method.  The two
-following lines are equivalent:
+`trace` emits the value of an expression. You are required to pass the binding with the `binding` method.
+
+The two following lines are equivalent:
 
 {% highlight ruby %}
 
@@ -105,6 +105,15 @@ If you want the output truncated, pass an integer argument:
 {% highlight ruby %}
 
     trace :text, binding, 30
+
+{% endhighlight %}
+
+The above examples use a symbol to trace a variable.  You can, however, pass in
+any expression:
+
+{% highlight ruby %}
+
+    trace "names.find { |n| n.length > 7 }", binding
 
 {% endhighlight %}
 
@@ -152,12 +161,12 @@ The [Synopsis](#synopsis) gave a good example of configuration:
 {% endhighlight %}
 
 This changes the names of the methods that Debuglog defines.  The motivation for
-that, of course, is another library or your own code defining methods of those
-names.  Debuglog will raise an exception (`DebugLog::Error`) if it detects a
-method name clash.  (Of course, you might load the other library _after_
-Debuglog, in which case it won't detect the clash.)  This precaution is taken
-because they are common method names at the top-level, and it's just not right
-for a debugging library to _cause_ bugs.
+that, of course, is to avoid a name clash with another library or your own code.
+Debuglog will raise an exception (`DebugLog::Error`) if it detects a method name
+clash.  (Of course, you might load the other library _after_ Debuglog, in which
+case it won't detect the clash.)  This precaution is taken because they are
+common method names at the top-level, and it's just not right for a debugging
+library to _cause_ bugs.
 
 If you omit a method name from the configuration, that method will not be
 defined.  The following code defines the method `d` instead of `debug`, but does
@@ -195,7 +204,7 @@ ignored with a message on STDERR.  That includes this case:
 
 {% endhighlight %}
 
-The code `require 'debuglog` is equivalent to the following code, meaning
+The code `require 'debuglog'` is equivalent to the following code, meaning
 your one shot at calling `configure` has been taken.
 
 {% highlight ruby %}
@@ -220,22 +229,21 @@ Final note: if you specify a file that is not writable, an error
 ### Motivation
 
 Debugging to a log file is very useful, even if your program doesn't do
-"logging" as such.  Ages ago I released `dev-utils/debug` which did this and
+"logging" as such.  Years ago I released `dev-utils/debug` which did this and
 intended to do more.  That's outdated now, only working on 1.8, so a revisit was
-worthwhile with a better name.  (If anyone wants the old name for something
-else, they're welcome to it.)
+worthwhile with a better name.  (If anyone wants the name `dev-utils` for
+something else, they're welcome to it.)
 
 ### Dependencies and requirements
 
-Debuglog does not depend on any other libraries and works in Ruby 1.8 and Ruby
-1.9.
+Debuglog does not depend on any other libraries. It is tested on Ruby versions
+1.8.\[67] and 1.9.\[123]. It should continue to work on future 1.9 releases.
 
-Unit tests are implemented in [Attest](http://gsinclair.github.com/attest.html).
+Unit tests are implemented in [Whitestone](http://gsinclair.github.com/whitestone.html).
 
 ### Project details
 
 * Author: Gavin Sinclair (user name: `gsinclair`; mail server: `gmail.com`)
-* Date: July 2010
 * Licence: MIT licence
 * Project homepage: [http://gsinclair.github.com/debuglog.html][home]
 * Source code: [http://github.com/gsinclair/debuglog][code]
@@ -243,6 +251,14 @@ Unit tests are implemented in [Attest](http://gsinclair.github.com/attest.html).
 
 [home]: http://gsinclair.github.com/debuglog.html
 [code]: http://github.com/gsinclair/debuglog
+
+### History
+
+* 6 JAN 2012: Version 1.0.1 released (improved documentation)
+* 3 JAN 2012: Version 1.0.0 released but not announced
+* JULY 2010: Implemented but not released
+
+See History.txt for more details.
 
 ### Possible future enhancements
 
