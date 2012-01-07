@@ -9,3 +9,8 @@ Future features
 
 * Colour, whether directly (:red, etc.) or indirectly (traces are yellow,
   timings are cyan, strings with !! are red, ...)
+
+* Blacklist and/or whitelist (maybe)
+    Debuglog.blacklist :foo
+    debug :foo, "Blah blah blah"   # Will not be printed.
+
